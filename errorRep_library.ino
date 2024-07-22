@@ -69,13 +69,15 @@ JsonDocument JSON;
 bool fatal_error_flag = false;
 int16_t fatal_error_code = 0;
 
+int16_t logNumber = 0;
+
 void build_json() {
-  JSON["timestamp"] = millis();
-  JSON["active"] = false;
-  JSON["level"] = debugLevel[loggingLevel];
-  JSON["code"] = 0;
-  JSON["context"] = "build_json()";
-  JSON["msg"] = "";
+  JSON[logNumber]["timestamp"] = millis();
+  JSON[logNumber]["active"] = false;
+  JSON[logNumber]["level"] = debugLevel[loggingLevel];
+  JSON[logNumber]["code"] = 0;
+  JSON[logNumber]["context"] = "build_json()";
+  JSON[logNumber]["msg"] = "";
 }
 
 void update_json() {
@@ -93,20 +95,20 @@ void print_json() {
 }
 
 
-size_t get_log_length() {
+size_t get_log_length(int modifyer = 0) {
   size_t log_length = sizeof(errorLog) / sizeof(errorLog[0]);
   // Serial.print("log_length: ");
   //  Serial.println(log_length);
-  return log_length;
+  return log_length + modifyer;
 }
 
 void shuffle_log() {
   size_t log_length = get_log_length();
   for (int i = (log_length - 1); i > 0; i--) {
-    Serial.print("Moving Log: ");
-    Serial.print(i - 1);
-    Serial.print(", to Log: ");
-    Serial.println(i);
+    //  Serial.print("Moving Log: ");
+    //  Serial.print(i - 1);
+    //  Serial.print(", to Log: ");
+    //   Serial.println(i);
     errorLog[i] = errorLog[i - 1];
   }
 }
@@ -123,37 +125,46 @@ void print_log_entry_as_json(statusStruc log_entry) {
   Serial.print("\n");
 }
 
+void print_error_log() {
+  for (int i = get_log_length(-1); i > -1; i--) {
+    print_log_entry_as_json(errorLog[i]);
+  }
+}
+
 // Use this to set errors elsewhere, can also be used to reset errors by calling with no arguments
 void set_error(bool active = true, msgLevel logLevel = INFO, int16_t code = 0, const char* context = "", const char* msg = "") {
+  logNumber++;
   currentStatus.timestamp = millis();
   currentStatus.active = active;
   currentStatus.level = logLevel;
   currentStatus.code = code;
   strcpy(currentStatus.context, context);
   strcpy(currentStatus.msg, msg);
-  JSON["timestamp"].set(currentStatus.timestamp);
-  JSON["active"].set(currentStatus.active);
-  JSON["level"].set(debugLevel[logLevel]);
-  JSON["code"].set(currentStatus.code);
-  JSON["context"].set(currentStatus.context);
-  JSON["msg"].set(currentStatus.msg);
+  //JSON["log_number"] = logNumber;
+  JSON[logNumber]["timestamp"].set(currentStatus.timestamp);
+  JSON[logNumber]["active"].set(currentStatus.active);
+  JSON[logNumber]["level"].set(debugLevel[logLevel]);
+  JSON[logNumber]["code"].set(currentStatus.code);
+  JSON[logNumber]["context"].set(currentStatus.context);
+  JSON[logNumber]["msg"].set(currentStatus.msg);
   if (logLevel == FATAL) {
     fatal_error_flag = true;  //
     fatal_error_code = code;  // log the error that caused the FATA_ERROR as can be cleared later if required
   }
-  Serial.print("Log Level: ");
-  Serial.print(logLevel);
-  Serial.print(" >= ");
-  Serial.println(LOGGING_LEVEL);
+ // Serial.print("Log Level: ");
+ // Serial.print(logLevel);
+ // Serial.print(" >= ");
+ // Serial.println(LOGGING_LEVEL);
   if (logLevel >= LOGGING_LEVEL) {  // if tghe error code meets the logging level then it should be recorded
     Serial.println("Logging!");
-    shuffle_log();
-    errorLog[0].timestamp = currentStatus.timestamp;
-    errorLog[0].active = currentStatus.active;
-    errorLog[0].level = currentStatus.level;
-    errorLog[0].code = currentStatus.code;
-    strcpy(errorLog[0].context, currentStatus.context);
-    strcpy(errorLog[0].msg, currentStatus.msg);
+
+   // shuffle_log();
+   // errorLog[0].timestamp = currentStatus.timestamp;
+   // errorLog[0].active = currentStatus.active;
+   // errorLog[0].level = currentStatus.level;
+   // errorLog[0].code = currentStatus.code;
+   // strcpy(errorLog[0].context, currentStatus.context);
+   // strcpy(errorLog[0].msg, currentStatus.msg);
   }
 #if DEBUG_ERRORS == true
   Serial.print("DEBUG_ERRORS (set): ");
@@ -191,11 +202,18 @@ void setup() {
   Serial.begin(115200);
   build_json();
   // print_json();
-  get_log_length();
-  print_log_entry_as_json(errorLog[0]);
+  // get_log_length();
+  // print_log_entry_as_json(errorLog[0]);
   delay(1000);
   set_error(true, FATAL, -12, "setup()", "Testing Errors");
-  print_log_entry_as_json(errorLog[0]);
+  // print_log_entry_as_json(errorLog[0]);
+  delay(1000);
+  set_error(true, ERROR, -15, "setup()", "Testing Errors 2 The ReTestaning");
+  // print_log_entry_as_json(errorLog[0]);
+  delay(1000);
+ // print_error_log();
+  delay(2000);
+  print_json();
 }
 
 
