@@ -156,7 +156,7 @@ void set_error(bool active = true, msgLevel logLevel = INFO, int16_t code = 0, c
  // Serial.print(" >= ");
  // Serial.println(LOGGING_LEVEL);
   if (logLevel >= LOGGING_LEVEL) {  // if tghe error code meets the logging level then it should be recorded
-    Serial.println("Logging!");
+  //  Serial.println("Logging!");
 
    // shuffle_log();
    // errorLog[0].timestamp = currentStatus.timestamp;
